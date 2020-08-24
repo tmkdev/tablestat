@@ -2,6 +2,9 @@ import logging
 import re
 from pokergame import Player, Game
 
+import tkinter as tk
+from tkinter import filedialog
+
 
 re_hand = re.compile('Hand #(?P<hand>\d+-\d+) - (?P<hand_time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})')
 re_seat = re.compile('Seat (?P<seat>\d): (?P<player>\S+) \((?P<stack>\d+)\)')
@@ -15,9 +18,12 @@ re_showdown = re.compile('\*\* Pot Show Down \*\*')
 
 game = Game()
 
+root = tk.Tk()
+root.withdraw()
 
+file_path = filedialog.askopenfilename()
 
-for line in open('HandHistory_20200821.txt', 'r'):
+for line in open(file_path, 'r'):
     m = re_hand.search(line)
     if m:
         game.handcount+=1
