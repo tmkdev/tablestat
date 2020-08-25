@@ -20,6 +20,7 @@ class Player(object):
         self.card_ev_sum = 0 
         self.flop_ev_sum = 0
 
+        self.state = Game.PREFLOP
         self.hand = ''
 
 
@@ -40,3 +41,7 @@ class Game(object):
         self.showdowns = 0
 
         self.gamestate = Game.PREFLOP
+
+    def reset_playerstate(self):
+        for player in self.players:
+            self.players[player].state = Game.PREFLOP

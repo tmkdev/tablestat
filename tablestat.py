@@ -19,107 +19,127 @@ re_showdown = re.compile('\*\* Pot Show Down \*\*')
 re_rebuy = re.compile('(?P<player>\S+) adds (?P<chips>\d+) chips')
 re_dealtcard = re.compile('Dealt to (?P<player>\S+) \[(?P<cards>\S{2} \S{2})\]')
 
-game = Game()
-ev = Card_EV()
 
-root = tk.Tk()
-root.withdraw()
+def processgame():
+    game = Game()
+    ev = Card_EV()
 
-file_path = filedialog.askopenfilename()
+    root = tk.Tk()
+    root.withdraw()
 
-for line in open(file_path, 'r'):
-    m = re_hand.search(line)
-    if m:
-        game.handcount+=1
-        game.gamestate = Game.PREFLOP
+    file_path = filedialog.askopenfilename()
 
-    m = re_seat.search(line)
-    if m:
-        player = m.groupdict()['player']
-        if player not in game.players:
-            logging.info(f'Player {player} not in players!')
-            p = Player(player, startstack=int(m.groupdict()['stack']))
-            game.players[player] = p
+    for line in open(file_path, 'r'):
+        m = re_hand.search(line)
+        if m:
+            game.handcount+=1
+            game.gamestate = Game.PREFLOP
+            game.reset_playerstate()
 
-        game.players[player].stack = int(m.groupdict()['stack']) 
-        game.players[player].handcount +=1 
+        m = re_seat.search(line)
+        if m:
+            player = m.groupdict()['player']
+            if player not in game.players:
+                logging.info(f'Player {player} not in players!')
+                p = Player(player, startstack=int(m.groupdict()['stack']))
+                game.players[player] = p
 
-    m = re_holecards.search(line)
-    if m:
-        game.gamestate = Game.HOLECARDS
+            game.players[player].stack = int(m.groupdict()['stack']) 
+            game.players[player].handcount +=1 
+
+        m = re_holecards.search(line)
+        if m:
+            game.gamestate = Game.HOLECARDS
+        
+        m = re_flop.search(line)
+        if m:
+            game.gamestate = Game.FLOP
+            game.flops += 1
+
+        m = re_turn.search(line)
+        if m:
+            game.gamestate = Game.TURN
+            game.turns += 1
+
+        m = re_river.search(line)
+        if m:
+            game.gamestate = Game.RIVER
+            game.rivers += 1
+
+        m = re_showdown.search(line)
+        if m:
+            game.gamestate = Game.SHOWDOWN
+            game.showdowns += 1
+
+        m = re_fold.search(line)
+        if m:
+            player = m.groupdict()['player']
+            game.players[player].folds +=1 
+
+        m = re_winspot.search(line)
+        if m:
+            player = m.groupdict()['player']
+            game.players[player].wins +=1 
+            if game.gamestate == Game.SHOWDOWN:
+                game.players[player].showdownwins +=1 
+
+        m = re_rebuy.search(line)
+        if m: 
+            player = m.groupdict()['player']
+            game.players[player].rebuys +=1
+            game.players[player].rebuychips += int(m.groupdict()['chips'])
+
+        m = re_dealtcard.search(line)
+        if m: 
+            player = m.groupdict()['player']
+            h, e = ev.evalhand(m.groupdict()['cards'])
+            game.players[player].card_ev_sum += e
+            game.players[player].hand = m.groupdict()['cards']
+
+        playertest = line.split(' ')
+        player = playertest[0]
+        if player in list(game.players) and playertest[1] in ['calls', 'checks', 'raises', 'bets', 'shows']:
+            if game.gamestate == Game.FLOP and game.players[player].state != Game.FLOP: 
+                game.players[player].state = Game.FLOP
+                game.players[player].flops+=1
+                if game.players[player].hand:
+                    h, e = ev.evalhand(game.players[player].hand)
+                    game.players[player].flop_ev_sum += e
+            
+            if game.gamestate == Game.TURN and game.players[player].state != Game.TURN:
+                game.players[player].state == Game.TURN
+                game.players[player].turns+=1
+
+            if game.gamestate == Game.RIVER and game.players[player].state != Game.RIVER:
+                game.players[player].state == Game.TURN
+                game.players[player].rivers+=1
+            
+            if game.gamestate == Game.SHOWDOWN and game.players[player].state != Game.SHOWDOWN:
+                game.players[player].state == Game.SHOWDOWN
+                game.players[player].showdowns+=1
+
+    return game
+
+def output(game):
+    print('Player Summary')
+    for player in game.players:
+        p = game.players[player]
+        print(f'********** {p.player} ***********')
+        print(f" Hands: {p.handcount} Flops seen: {p.flops}  Turns seen: {p.turns} Rivers seen: {p.rivers} Showdowns: {p.showdowns} Wins: {p.wins} Folds: {p.folds}" )
+        print(f' Hands Played%: {100.0 * p.flops / p.handcount:.1f}%')
+        print(f' %Pots Won: {100.0 * p.wins / p.flops:.1f}%')
+        print(f' Overall Win%: {100.0 * p.wins / p.handcount:.1f}%')
+        print(f' Showdown Win%: {100.0 * p.showdownwins / p.showdowns:.1f}%')
+        print('---- STACK INFO ----')
+        print(f' StartStack: {p.startstack} for ${p.startstack*0.2:.2f}')
+        print(f' Rebuys: {p.rebuys} for {p.rebuychips} chips ${p.rebuychips*0.2:.2f}')
+        print(f' Final Stack: {p.stack} chips ${p.stack*0.2:.2f}')
+        print(f' Net Earnings: {p.stack - (p.rebuychips + p.startstack)} chips ${(p.stack - (p.rebuychips + p.startstack)) * 0.2:.2f}')
+        print('---- Hadd Equity ----')
+        print(f' Avg Card Equity: {p.card_ev_sum / p.handcount:.2f}')
+        print(f' Avg Flop Card Equity: {p.flop_ev_sum / p.flops:.2f}')
+        print()
     
-    m = re_flop.search(line)
-    if m:
-        game.gamestate = Game.FLOP
-        game.flops += 1
-
-    m = re_turn.search(line)
-    if m:
-        game.gamestate = Game.TURN
-        game.turns += 1
-
-    m = re_river.search(line)
-    if m:
-        game.gamestate = Game.RIVER
-        game.rivers += 1
-
-    m = re_showdown.search(line)
-    if m:
-        game.gamestate = Game.SHOWDOWN
-        game.showdowns += 1
-
-    m = re_fold.search(line)
-    if m:
-        player = m.groupdict()['player']
-        game.players[player].folds +=1 
-
-    m = re_winspot.search(line)
-    if m:
-        player = m.groupdict()['player']
-        game.players[player].wins +=1 
-        if game.gamestate == Game.SHOWDOWN:
-            game.players[player].showdownwins +=1 
-
-    m = re_rebuy.search(line)
-    if m: 
-        player = m.groupdict()['player']
-        game.players[player].rebuys +=1
-        game.players[player].rebuychips += int(m.groupdict()['chips'])
-
-    m = re_dealtcard.search(line)
-    if m: 
-        player = m.groupdict()['player']
-        h, e = ev.evalhand(m.groupdict()['cards'])
-        game.players[player].card_ev_sum += e
-        game.players[player].hand = m.groupdict()['cards']
-
-    playertest = line.split(' ')
-    player = playertest[0]
-    if player in list(game.players) and playertest[1] in ['calls', 'checks', 'raises', 'bets', 'shows']:
-        if game.gamestate == Game.FLOP:
-            game.players[player].flops+=1
-            if game.players[player].hand:
-                h, e = ev.evalhand(game.players[player].hand)
-                game.players[player].flop_ev_sum += e
-        if game.gamestate == Game.TURN:
-            game.players[player].turns+=1
-        if game.gamestate == Game.RIVER:
-            game.players[player].rivers+=1
-        if game.gamestate == Game.SHOWDOWN:
-            game.players[player].showdowns+=1
-
-print('Player Summary')
-for player in game.players:
-    p = game.players[player]
-    print(f"{p.player} - Hands: {p.handcount} Flops: {p.flops}  Turns: {p.turns} Rivers: {p.rivers} Showdowns: {p.showdowns} Wins: {p.wins} Folds: {p.folds}" )
-    print(f'Win Ratio {p.wins / p.handcount:.3f}')
-    print(f'Flop Win Ratio {p.wins / p.flops:.3f}')
-    print(f'Hands played ratio {p.flops / p.handcount:.3f}')
-    print(f'StartStack: {p.startstack} for ${p.startstack*0.2:.2f}')
-    print(f'Rebuys: {p.rebuys} for {p.rebuychips} chips ${p.rebuychips*0.2:.2f}')
-    print(f'Final Stack {p.stack} chips ${p.stack*0.2:.2f}')
-    print(f'Showdown Wins: {p.showdownwins}')
-    print(f'Avg Card Equity: {p.card_ev_sum / p.handcount:.2f}')
-    print(f'Avg Flop Card Equity: {p.flop_ev_sum / p.flops:.2f}')
-    print()
-    
+if __name__ == '__main__':
+    game = processgame()
+    output(game)
