@@ -48,18 +48,22 @@ for line in open(file_path, 'r'):
     m = re_flop.search(line)
     if m:
         game.gamestate = Game.FLOP
+        game.flops += 1
 
     m = re_turn.search(line)
     if m:
         game.gamestate = Game.TURN
+        game.turns += 1
 
     m = re_river.search(line)
     if m:
         game.gamestate = Game.RIVER
+        game.rivers += 1
 
     m = re_showdown.search(line)
     if m:
         game.gamestate = Game.SHOWDOWN
+        game.showdowns += 1
 
     m = re_fold.search(line)
     if m:
@@ -70,6 +74,8 @@ for line in open(file_path, 'r'):
     if m:
         player = m.groupdict()['player']
         game.players[player].wins +=1 
+        if game.gamestate == Game.SHOWDOWN:
+            game.players[player].showdownwins +=1 
 
     m = re_rebuy.search(line)
     if m: 
@@ -99,5 +105,6 @@ for player in game.players:
     print(f'StartStack: {p.startstack} for ${p.startstack*0.2:.2f}')
     print(f'Rebuys: {p.rebuys} for {p.rebuychips} chips ${p.rebuychips*0.2:.2f}')
     print(f'Final Stack {p.stack} chips ${p.stack*0.2:.2f}')
+    print(f'Showdown Wins: {p.showdownwins}')
     print()
     
