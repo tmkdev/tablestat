@@ -63,7 +63,8 @@ for line in open(file_path, 'r'):
 
     m = re_fold.search(line)
     if m:
-        pass
+        player = m.groupdict()['player']
+        game.players[player].folds +=1 
 
     m = re_winspot.search(line)
     if m:
@@ -91,7 +92,7 @@ for line in open(file_path, 'r'):
 print('Player Summary')
 for player in game.players:
     p = game.players[player]
-    print(f"{p.player} - Hands: {p.handcount} Flops: {p.flops}  Turns: {p.turns} Rivers: {p.rivers} Showdowns: {p.showdowns} Wins: {p.wins}" )
+    print(f"{p.player} - Hands: {p.handcount} Flops: {p.flops}  Turns: {p.turns} Rivers: {p.rivers} Showdowns: {p.showdowns} Wins: {p.wins} Folds: {p.folds}" )
     print(f'Win Ratio {p.wins / p.handcount:.3f}')
     print(f'Flop Win Ratio {p.wins / p.flops:.3f}')
     print(f'Hands played ratio {p.flops / p.handcount:.3f}')
