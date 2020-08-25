@@ -1,6 +1,7 @@
 import logging
 import re
 from pokergame import Player, Game
+from ev_eval import Card_EV
 
 import tkinter as tk
 from tkinter import filedialog
@@ -16,8 +17,10 @@ re_river = re.compile('\*\* River \*\*')
 re_winspot = re.compile('(?P<player>\S+) wins Pot \((?P<potsize>\d+\))')
 re_showdown = re.compile('\*\* Pot Show Down \*\*')
 re_rebuy = re.compile('(?P<player>\S+) adds (?P<chips>\d+) chips')
+re_dealtcard = re.compile('Dealt to (?P<player>\S+) \[(?P<cards>\S{2} \S{2})\]')
 
 game = Game()
+ev = Card_EV()
 
 root = tk.Tk()
 root.withdraw()
@@ -83,11 +86,21 @@ for line in open(file_path, 'r'):
         game.players[player].rebuys +=1
         game.players[player].rebuychips += int(m.groupdict()['chips'])
 
+    m = re_dealtcard.search(line)
+    if m: 
+        player = m.groupdict()['player']
+        h, e = ev.evalhand(m.groupdict()['cards'])
+        game.players[player].card_ev_sum += e
+        game.players[player].hand = m.groupdict()['cards']
+
     playertest = line.split(' ')
     player = playertest[0]
     if player in list(game.players) and playertest[1] in ['calls', 'checks', 'raises', 'bets', 'shows']:
         if game.gamestate == Game.FLOP:
             game.players[player].flops+=1
+            if game.players[player].hand:
+                h, e = ev.evalhand(game.players[player].hand)
+                game.players[player].flop_ev_sum += e
         if game.gamestate == Game.TURN:
             game.players[player].turns+=1
         if game.gamestate == Game.RIVER:
@@ -106,5 +119,7 @@ for player in game.players:
     print(f'Rebuys: {p.rebuys} for {p.rebuychips} chips ${p.rebuychips*0.2:.2f}')
     print(f'Final Stack {p.stack} chips ${p.stack*0.2:.2f}')
     print(f'Showdown Wins: {p.showdownwins}')
+    print(f'Avg Card Equity: {p.card_ev_sum / p.handcount:.2f}')
+    print(f'Avg Flop Card Equity: {p.flop_ev_sum / p.flops:.2f}')
     print()
     

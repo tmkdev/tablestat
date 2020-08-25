@@ -17,7 +17,10 @@ class Player(object):
         self.showdownwins = 0
         self.rebuys = 0
         self.rebuychips = 0
-        
+        self.card_ev_sum = 0 
+        self.flop_ev_sum = 0
+
+        self.hand = ''
 
 
 class Game(object):
