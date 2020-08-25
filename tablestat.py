@@ -15,6 +15,7 @@ re_turn = re.compile('\*\* Turn \*\*')
 re_river = re.compile('\*\* River \*\*')
 re_winspot = re.compile('(?P<player>\S+) wins Pot \((?P<potsize>\d+\))')
 re_showdown = re.compile('\*\* Pot Show Down \*\*')
+re_rebuy = re.compile('(?P<player>\S+) adds (?P<chips>\d+) chips')
 
 game = Game()
 
@@ -37,6 +38,7 @@ for line in open(file_path, 'r'):
             p = Player(player, startstack=int(m.groupdict()['stack']))
             game.players[player] = p
 
+        game.players[player].stack = int(m.groupdict()['stack']) 
         game.players[player].handcount +=1 
 
     m = re_holecards.search(line)
@@ -68,7 +70,11 @@ for line in open(file_path, 'r'):
         player = m.groupdict()['player']
         game.players[player].wins +=1 
 
-
+    m = re_rebuy.search(line)
+    if m: 
+        player = m.groupdict()['player']
+        game.players[player].rebuys +=1
+        game.players[player].rebuychips += int(m.groupdict()['chips'])
 
     playertest = line.split(' ')
     player = playertest[0]
@@ -86,6 +92,11 @@ print('Player Summary')
 for player in game.players:
     p = game.players[player]
     print(f"{p.player} - Hands: {p.handcount} Flops: {p.flops}  Turns: {p.turns} Rivers: {p.rivers} Showdowns: {p.showdowns} Wins: {p.wins}" )
-    print(f'Win Ratio {p.wins / p.handcount:.3f} Flop Win Ratio {p.wins / p.flops:.3f}')
+    print(f'Win Ratio {p.wins / p.handcount:.3f}')
+    print(f'Flop Win Ratio {p.wins / p.flops:.3f}')
+    print(f'Hands played ratio {p.flops / p.handcount:.3f}')
+    print(f'StartStack: {p.startstack} for ${p.startstack*0.2:.2f}')
+    print(f'Rebuys: {p.rebuys} for {p.rebuychips} chips ${p.rebuychips*0.2:.2f}')
+    print(f'Final Stack {p.stack} chips ${p.stack*0.2:.2f}')
     print()
     

@@ -14,6 +14,9 @@ class Player(object):
         self.showdowns =0
         self.folds = 0 
         self.wins = 0 
+        self.rebuys = 0
+        self.rebuychips = 0
+        
 
 
 class Game(object):
