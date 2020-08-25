@@ -111,7 +111,7 @@ def processgame():
                 game.players[player].turns+=1
 
             if game.gamestate == Game.RIVER and game.players[player].state != Game.RIVER:
-                game.players[player].state == Game.TURN
+                game.players[player].state == Game.RIVER
                 game.players[player].rivers+=1
             
             if game.gamestate == Game.SHOWDOWN and game.players[player].state != Game.SHOWDOWN:
@@ -125,17 +125,19 @@ def output(game):
     for player in game.players:
         p = game.players[player]
         print(f'********** {p.player} ***********')
-        print(f" Hands: {p.handcount} Flops seen: {p.flops}  Turns seen: {p.turns} Rivers seen: {p.rivers} Showdowns: {p.showdowns} Wins: {p.wins} Folds: {p.folds}" )
+        print(f" Hands: {p.handcount} Flops seen: {p.flops} Turns seen: {p.turns} Rivers seen: {p.rivers} Showdowns: {p.showdowns} Wins: {p.wins} Folds: {p.folds}" )
         print(f' Hands Played%: {100.0 * p.flops / p.handcount:.1f}%')
         print(f' %Pots Won: {100.0 * p.wins / p.flops:.1f}%')
         print(f' Overall Win%: {100.0 * p.wins / p.handcount:.1f}%')
         print(f' Showdown Win%: {100.0 * p.showdownwins / p.showdowns:.1f}%')
-        print('---- STACK INFO ----')
-        print(f' StartStack: {p.startstack} for ${p.startstack*0.2:.2f}')
+        print()
+        print(' ---- STACK INFO ----')
+        print(f' Start Stack: {p.startstack} for ${p.startstack*0.2:.2f}')
         print(f' Rebuys: {p.rebuys} for {p.rebuychips} chips ${p.rebuychips*0.2:.2f}')
         print(f' Final Stack: {p.stack} chips ${p.stack*0.2:.2f}')
         print(f' Net Earnings: {p.stack - (p.rebuychips + p.startstack)} chips ${(p.stack - (p.rebuychips + p.startstack)) * 0.2:.2f}')
-        print('---- Card Expected Values ----')
+        print()
+        print(' ---- Card Expected Values ----')
         print(f' Avg Card EV: {p.card_ev_sum / p.handcount:.2f}')
         print(f' Avg Flop Card EV: {p.flop_ev_sum / p.flops:.2f}')
         print()
