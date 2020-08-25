@@ -135,9 +135,9 @@ def output(game):
         print(f' Rebuys: {p.rebuys} for {p.rebuychips} chips ${p.rebuychips*0.2:.2f}')
         print(f' Final Stack: {p.stack} chips ${p.stack*0.2:.2f}')
         print(f' Net Earnings: {p.stack - (p.rebuychips + p.startstack)} chips ${(p.stack - (p.rebuychips + p.startstack)) * 0.2:.2f}')
-        print('---- Hadd Equity ----')
-        print(f' Avg Card Equity: {p.card_ev_sum / p.handcount:.2f}')
-        print(f' Avg Flop Card Equity: {p.flop_ev_sum / p.flops:.2f}')
+        print('---- Card Expected Values ----')
+        print(f' Avg Card EV: {p.card_ev_sum / p.handcount:.2f}')
+        print(f' Avg Flop Card EV: {p.flop_ev_sum / p.flops:.2f}')
         print()
     
 if __name__ == '__main__':
