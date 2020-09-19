@@ -39,6 +39,8 @@ class Game(object):
         self.turns = 0
         self.rivers = 0
         self.showdowns = 0
+        self.startingchips = 0
+        self.rebuychips = 0
 
         self.gamestate = Game.PREFLOP
 

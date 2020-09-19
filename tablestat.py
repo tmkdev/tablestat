@@ -6,6 +6,7 @@ from ev_eval import Card_EV
 import tkinter as tk
 from tkinter import filedialog
 
+chipval = 0.20
 
 re_hand = re.compile('Hand #(?P<hand>\d+-\d+) - (?P<hand_time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})')
 re_seat = re.compile('Seat (?P<seat>\d): (?P<player>\S+) \((?P<stack>\d+)\)')
@@ -43,6 +44,7 @@ def processgame():
                 logging.info(f'Player {player} not in players!')
                 p = Player(player, startstack=int(m.groupdict()['stack']))
                 game.players[player] = p
+                game.startingchips += int(m.groupdict()['stack'])
 
             game.players[player].stack = int(m.groupdict()['stack']) 
             game.players[player].handcount +=1 
@@ -89,6 +91,8 @@ def processgame():
             game.players[player].rebuys +=1
             game.players[player].rebuychips += int(m.groupdict()['chips'])
 
+            game.rebuychips += int(m.groupdict()['chips'])
+
         m = re_dealtcard.search(line)
         if m: 
             player = m.groupdict()['player']
@@ -120,6 +124,14 @@ def processgame():
 
     return game
 
+def gameoutput(game):
+    print('GAMESTATS')
+    print(f'Hands Played: {game.handcount}')
+    print(f'Initial Buyin chips: {game.startingchips} - ${game.startingchips * chipval:.2f}')
+    print(f'Rebuy Chips chips: {game.rebuychips}')
+    print(f'Total Table Chips: {game.rebuychips + game.startingchips}')
+
+
 def output(game):
     print('Player Summary')
     for player in game.players:
@@ -127,9 +139,15 @@ def output(game):
         print(f'********** {p.player} ***********')
         print(f" Hands: {p.handcount} Flops seen: {p.flops} Turns seen: {p.turns} Rivers seen: {p.rivers} Showdowns: {p.showdowns} Wins: {p.wins} Folds: {p.folds}" )
         print(f' Hands Played%: {100.0 * p.flops / p.handcount:.1f}%')
-        print(f' %Pots Won: {100.0 * p.wins / p.flops:.1f}%')
+        try:
+            print(f' %Pots Won: {100.0 * p.wins / p.flops:.1f}%')
+        except ZeroDivisionError:
+            print(' %Pots Won: N/A')
         print(f' Overall Win%: {100.0 * p.wins / p.handcount:.1f}%')
-        print(f' Showdown Win%: {100.0 * p.showdownwins / p.showdowns:.1f}%')
+        try:
+            print(f' Showdown Win%: {100.0 * p.showdownwins / p.showdowns:.1f}%')
+        except ZeroDivisionError:
+            print(f' Showdown Win%: N/A')
         print()
         print(' ---- STACK INFO ----')
         print(f' Start Stack: {p.startstack} for ${p.startstack*0.2:.2f}')
@@ -138,10 +156,14 @@ def output(game):
         print(f' Net Earnings: {p.stack - (p.rebuychips + p.startstack)} chips ${(p.stack - (p.rebuychips + p.startstack)) * 0.2:.2f}')
         print()
         print(' ---- Card Expected Values ----')
-        print(f' Avg Card EV: {p.card_ev_sum / p.handcount:.2f}')
-        print(f' Avg Flop Card EV: {p.flop_ev_sum / p.flops:.2f}')
+        try:
+            print(f' Avg Card EV: {p.card_ev_sum / p.handcount:.2f}')
+            print(f' Avg Flop Card EV: {p.flop_ev_sum / p.flops:.2f}')
+        except ZeroDivisionError:
+            print('EV Stats not available.')
         print()
     
 if __name__ == '__main__':
     game = processgame()
     output(game)
+    gameoutput(game)
